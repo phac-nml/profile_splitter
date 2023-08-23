@@ -163,13 +163,14 @@ def main():
 
     if partition_size is not None:
         print(f'Splitting input file into bins of size {partition_size}')
-        if partition_file >= len(pdf):
+        if partition_size >= len(pdf):
             p = ['1'] * len(pdf)
         else:
             labels = pdf.index.values.tolist()
             bins = []
             while labels:
-                bins.append(labels[:partition_size], labels[partition_size:])
+                chunk, labels = labels[:partition_size], labels[partition_size:]
+                bins.append(chunk)
             p = []
             for i in range(0,len(bins)):
                 for id in bins[i]:
