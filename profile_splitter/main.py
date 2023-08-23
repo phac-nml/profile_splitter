@@ -193,6 +193,8 @@ def main():
 
     run_data['analysis_end_time'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
+    with open(os.path.join(outdir,"run.json"),'w' ) as fh:
+        fh.write(json.dumps(run_data, indent=4))
 
 
 # call main function
