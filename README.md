@@ -52,12 +52,12 @@ Install the latest master branch version directly from Github:
 ## Usage
 If you run ``profile_splitter``, you should see the following usage statement:
 
-    usage: dist.py [-h] --query QUERY --ref REF --outdir OUTDIR [--outfmt OUTFMT]
-                   [--file_type FILE_TYPE] [--distm DISTM]
-                   [--missing_thresh MISSING_THRESH]
-                   [--sample_qual_thresh SAMPLE_QUAL_THRESH]
-                   [--match_threshold MATCH_THRESHOLD]
-                   [--mapping_file MAPPING_FILE] [--force] [-s] [-V]
+    usage: profile_splitter [-h] --profile PROFILE [--partition_file PARTITION_FILE]
+               [--partition_column PARTITION_COLUMN]
+               [--partition_size PARTITION_SIZE] --outdir OUTDIR
+               [--prefix PREFIX] [--mapping_file MAPPING_FILE]
+               [--file_type FILE_TYPE] [--force] [-V]
+
 
 Supported profile formats
 =====
