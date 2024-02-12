@@ -11,8 +11,8 @@ class read_data:
         if status:
             self.df = self.process_profile(input_file)
         else:
-            self.df = pd.Dataframe()
-            self.messages.append(f"Error unable to process {input_file}")
+            self.df = pd.DataFrame()
+            self.messages.append(f"Error unable to process {input_file}: is_file:{os.path.isfile(input_file)}")
         self.status = status
 
     def is_file_ok(self,f):
@@ -48,7 +48,7 @@ class read_data:
         '''
 
         if format == 'text':
-            df = pd.read_csv(file_path, header=0, sep="\t", index_col=0, low_memory=False)
+            df = pd.read_csv(file_path, header=0, sep="\t", low_memory=False)
         elif format == 'parquet':
             df = pd.read_parquet(
                 file_path,

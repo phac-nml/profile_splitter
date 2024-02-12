@@ -64,7 +64,7 @@ def write_partitions(df,bins,outdir,format):
         out_file = os.path.join(outdir,f'{bin_id}.{format}')
         out_files.append(out_file)
         if format == 'text':
-            df[df.index.isin(bins[bin_id])].to_csv(out_file,sep="\t",header=True)
+            df[df.index.isin(bins[bin_id])].to_csv(out_file,sep="\t",header=True,index=False)
         else:
             df.to_parquet(out_file, compression='gzip')
     return out_files
