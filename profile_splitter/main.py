@@ -115,7 +115,7 @@ def main():
         print(
             f'{profile.messages}')
         sys.exit()
-    profile_columns = profile_df.columns.to_list()
+    profile_columns = profile.df.columns.to_list()
 
     if partition_file is not None:
         partition = read_data(partition_file)
