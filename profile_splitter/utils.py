@@ -1,4 +1,5 @@
 import pandas as pd
+import os
 from profile_splitter.constants import MIN_FILE_SIZE
 
 class read_data:
