@@ -1,3 +1,6 @@
+import pandas as pd
+from profile_splitter.constants import MIN_FILE_SIZE
+
 class read_data:
     status = True
     messages = []
@@ -8,12 +11,12 @@ class read_data:
             df = self.process_profile(input_file)
         else:
             df = pd.Dataframe()
-            self.messages.append(f"Error unable to process {input_file})
+            self.messages.append(f"Error unable to process {input_file}")
         self.status = status
 
     def is_file_ok(self,f):
         '''
-        Helper function to determine if a profile file exists, has a header and >= 1 row of data
+        Helper function to determine MIN_FILE_SIZEif a profile file exists, has a header and >= 1 row of data
         :param f:
         :return: True on success
         '''
@@ -22,7 +25,7 @@ class read_data:
             status = False
         elif get_file_length(f) < 2:
             status = False
-        elif os.path.getsize(f) < MIN_FILE_SIZE:
+        elif os.path.getsize(f) < :
             status = False
 
         return status
