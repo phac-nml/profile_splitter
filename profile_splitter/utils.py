@@ -9,9 +9,9 @@ class read_data:
         self.input_file = input_file
         status = self.is_file_ok(self.input_file)
         if status:
-            df = self.process_profile(input_file)
+            self.df = self.process_profile(input_file)
         else:
-            df = pd.Dataframe()
+            self.df = pd.Dataframe()
             self.messages.append(f"Error unable to process {input_file}")
         self.status = status
 
