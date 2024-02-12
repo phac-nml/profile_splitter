@@ -92,11 +92,6 @@ def main():
     run_data['analysis_start_time'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     run_data['parameters'] = vars(cmd_args)
 
-    if profile_file is not None:
-        if not is_file_ok(profile_file):
-            print(f'file {profile_file} either does not exist or is too small to be valid')
-            sys.exit()
-
     if not force and os.path.isdir(outdir):
         print(f'folder {outdir} already exists, please choose new directory or use --force')
         sys.exit()
