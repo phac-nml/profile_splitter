@@ -24,7 +24,7 @@ class read_data:
         status = True
         if not os.path.isfile(f):
             status = False
-        elif get_file_length(f) < 2:
+        elif self.get_file_length(f) < 2:
             status = False
         elif os.path.getsize(f) < MIN_FILE_SIZE:
             status = False
