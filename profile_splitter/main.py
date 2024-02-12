@@ -64,7 +64,7 @@ def write_partitions(df,bins,outdir,format):
         out_file = os.path.join(outdir,f'{bin_id}.{format}')
         out_files.append(out_file)
         if format == 'text':
-            df[df.index.isin(bins[bin_id])].to_csv(out_file,sep="\t",header=True,index=False)
+            df[df['sample_id'].isin(bins[bin_id])].to_csv(out_file,sep="\t",header=True,index=False)
         else:
             df.to_parquet(out_file, compression='gzip')
     return out_files
@@ -155,8 +155,6 @@ def main():
         if not group_id in groups:
             groups[group_id] = []
         groups[group_id].append(sample_id)
-
-
 
     run_data['profile_info']['num_samples'] = len(profile.df)
     run_data['profile_info']['parsed_file_path'] = profile_file
