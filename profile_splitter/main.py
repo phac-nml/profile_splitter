@@ -5,10 +5,8 @@ import os
 from datetime import datetime
 
 from profile_splitter.version import __version__
-from profile_splitter.utils import process_profile, is_file_ok, filter_columns, \
-    process_partitions, guess_profile_format
+from profile_splitter.utils import read_data
 from profile_splitter.constants import RUN_DATA
-
 
 
 
@@ -51,10 +49,6 @@ def parse_args():
     parser.add_argument('--partition_size', '-s', type=int, required=False,
                         help='Split file into chunks of specified size (mutually exclusive with partition_file and partition_column)')
     parser.add_argument('--outdir', '-o', type=str, required=True, help='Result output files')
-    parser.add_argument('--prefix', '-p', type=str, required=False, help='Prefix for result files',
-                        default='partition')
-    parser.add_argument('--mapping_file', '-m', type=str, required=False,
-                        help='json formatted allele mapping')
     parser.add_argument('--file_type', '-e', type=str, required=False, help='Out format [text, parquet]',
                         default='text')
     parser.add_argument('--force', '-f', required=False, help='Overwrite existing directory',
@@ -75,6 +69,8 @@ def write_partitions(df,bins,outdir,prefix,format):
             df.to_parquet(out_file, compression='gzip')
     return out_files
 
+
+
 def main():
     cmd_args = parse_args()
     profile_file = cmd_args.profile
@@ -84,8 +80,12 @@ def main():
     outdir = cmd_args.outdir
     prefix = cmd_args.prefix
     file_type = cmd_args.file_type
-    allele_map = cmd_args.mapping_file
     force = cmd_args.force
+
+    if not file_type in ['text', 'parquet']:
+        print(f'Supplied filetype does not match [text, parquet]: {file_type} ')
+        sys.exit()
+
 
 
 
@@ -96,17 +96,6 @@ def main():
     if profile_file is not None:
         if not is_file_ok(profile_file):
             print(f'file {profile_file} either does not exist or is too small to be valid')
-            sys.exit()
-
-    partition_options = [partition_file, partition_column, partition_size]
-    if len(set(partition_options) - set([None])) != 1:
-        print(f'Error you have specified invalid combinations of partition options, you need to select only as single'
-              f'parameter from profile_file, partition_column, partition_size, you specified:'
-              f'partition_file:{partition_file}, partition_column:{partition_column}, partition_size:{partition_size}')
-
-    if partition_file is not None:
-        if not is_file_ok(partition_file):
-            print(f'file {partition_file} either does not exist or is too small to be valid')
             sys.exit()
 
     if not force and os.path.isdir(outdir):
@@ -120,75 +109,65 @@ def main():
             if os.path.isfile(file):
                 os.remove(file)
 
-    if not file_type in ['text', 'parquet']:
-        print(f'Supplied filetype does not match [text, parquet]: {file_type} ')
-        sys.exit()
 
     # initialize analysis directory
     if not os.path.isdir(outdir):
         os.makedirs(outdir, 0o755)
 
     print(f'Reading profile: {profile_file}')
-    (allele_map, pdf) = process_profile(profile_file, column_mapping=allele_map,format=guess_profile_format(profile_file))
+    profile = read_data(profile_file)
 
-
-    print(f'Writting allele map')
-    with open(os.path.join(outdir, "allele_map.json"), 'w') as fh:
-        fh.write(json.dumps(allele_map, indent=4))
-
-    cols = set(pdf.columns.values.tolist())
-
-    if partition_column is not None:
-        print(f'Processing partition column')
-        if not partition_column in cols:
-            print(f'Supplied profile {profile_file }does not contain specified splitting column {partition_column} ')
-            sys.exit()
-
-        partitions = dict(zip(pdf.index.values.tolist(), pdf[partition_column].values.tolist()))
-
-        # remove partition column
-        cols_to_remove = [partition_column]
-        pdf = filter_columns(pdf, cols_to_remove)
+    if profile.status == False:
+        print(
+            f'{profile.messages}')
+        sys.exit()
+    profile_columns = profile_df.columns.to_list()
 
     if partition_file is not None:
-        print(f'Processing partition file')
-        partitions = process_partitions(partition_file,format=guess_profile_format(partition_file))
-        partition_sample_ids = set(partitions.keys())
-        profile_sample_ids = set(pdf.index.values.tolist())
-        if len(profile_sample_ids & partition_sample_ids) == 0:
-            print(f'Errror no sample identifiers overlapped between {partition_file} and {profile_file}')
-            print(f'Profile samples: {list(profile_sample_ids)}')
-            print(f'Partition samples: {list(partition_sample_ids)}')
+        partition = read_data(partition_file)
+        if partition.status == False:
+            print(
+                f'{partition.messages}')
             sys.exit()
+        partitions = dict(zip(partition.df['sample_id'].values.tolist(), partition.df['partition'].values.tolist()))
+    elif partition_column is not None:
+        if not partition_column in profile_columns:
+            print(
+                f'Error you have specified invalid partition_column:{partition_column}, it is not found in {profile_file}')
+            sys.exit()
+        partitions = dict(zip(profile.df[partition_column].values.tolist(), p))
 
-    if partition_size is not None:
-        print(f'Splitting input file into bins of size {partition_size}')
-        if partition_size >= len(pdf):
-            p = ['1'] * len(pdf)
-        else:
-            labels = pdf.index.values.tolist()
-            bins = []
-            while labels:
-                chunk, labels = labels[:partition_size], labels[partition_size:]
-                bins.append(chunk)
-            p = []
-            for i in range(0,len(bins)):
-                for id in bins[i]:
-                    p.append(f'{i}')
-        partitions = dict(zip(pdf.index.values.tolist(), p))
+    elif partition_size is not None:
+        if partition_size >= len(profile.df):
+            partition_size = len(profile.df)
 
-    bins = {}
-    for id in partitions:
-        p = partitions[id]
-        if not p in bins:
-            bins[p] = []
-        bins[p].append(id)
+        labels = profile.df.index.values.tolist()
+        bins = []
+        while labels:
+            chunk, labels = labels[:partition_size], labels[partition_size:]
+            bins.append(chunk)
+        p = []
+        for i in range(0, len(bins)):
+            p+= [f'{i}'] * len(bins[i])
+        partitions = dict(zip(profile.df.index.values.tolist(), p))
+    else:
+        print(f'Error you have specified invalid combinations of partition options, you need to select only as single'
+              f'parameter from profile_file, partition_column, partition_size, you specified:'
+              f'partition_file:{partition_file}, partition_column:{partition_column}, partition_size:{partition_size}')
 
-    run_data['batch_memberships'] = bins
-    run_data['profile_info']['num_samples'] = len( pdf)
+    groups = {}
+    for sample_id in partitions:
+        group_id = partitions[sample_id]
+        if not group_id in groups:
+            groups[group_id] = []
+        groups[group_id].append(sample_id)
+
+
+
+    run_data['profile_info']['num_samples'] = len(profile.df)
     run_data['profile_info']['parsed_file_path'] = profile_file
 
-    out_files = write_partitions(pdf, bins, outdir, prefix, file_type)
+    out_files = write_partitions(profile.df, groups, outdir, prefix, file_type)
     run_data['result_files'] = out_files
 
     run_data['analysis_end_time'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
