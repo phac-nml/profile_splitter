@@ -58,10 +58,10 @@ def parse_args():
 
     return parser.parse_args()
 
-def write_partitions(df,bins,outdir,prefix,format):
+def write_partitions(df,bins,outdir,format):
     out_files = []
     for bin_id in bins:
-        out_file = os.path.join(outdir,f'{prefix}-{bin_id}.{format}')
+        out_file = os.path.join(outdir,f'{bin_id}.{format}')
         out_files.append(out_file)
         if format == 'text':
             df[df.index.isin(bins[bin_id])].to_csv(out_file,sep="\t",header=True)
@@ -78,7 +78,6 @@ def main():
     partition_column = cmd_args.partition_column
     partition_size = cmd_args.partition_size
     outdir = cmd_args.outdir
-    prefix = cmd_args.prefix
     file_type = cmd_args.file_type
     force = cmd_args.force
 
@@ -167,7 +166,7 @@ def main():
     run_data['profile_info']['num_samples'] = len(profile.df)
     run_data['profile_info']['parsed_file_path'] = profile_file
 
-    out_files = write_partitions(profile.df, groups, outdir, prefix, file_type)
+    out_files = write_partitions(profile.df, groups, outdir, file_type)
     run_data['result_files'] = out_files
 
     run_data['analysis_end_time'] = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
